@@ -60,25 +60,45 @@ public class Catalog extends
             throw new DPUException("Could not obtain filesInput", ex);
         }
 
+        RDFDataUnit.Iteration graphsIteration;
+        try {
+            graphsIteration = rdfInput.getIteration();
+        } catch (DataUnitException ex) {
+            throw new DPUException("Could not obtain rdfInput", ex);
+        }
+
         boolean shouldContinue = !dpuContext.canceled();
-        ResourceHelper resourceHelper = ResourceHelpers.create(filesInput);
+        ResourceHelper filesResourceHelper = ResourceHelpers.create(filesInput);
+        ResourceHelper graphsResourceHelper = ResourceHelpers.create(rdfInput);
         try {
             StringBuilder sb = new StringBuilder("[");
             while (shouldContinue && filesIteration.hasNext()) {
-
                 FilesDataUnit.Entry entry;
                 entry = filesIteration.next();
                 String symbolicName = entry.getSymbolicName();
-                Map<String, String> resource = resourceHelper.getResource(symbolicName);
+                Map<String, String> resource = filesResourceHelper.getResource(symbolicName);
                 String resourceUri = resource.get("uri");
                 sb.append("{ \"uri\": \"");
                 sb.append(resourceUri);
                 sb.append("\", \"name\": \"");
                 sb.append(symbolicName);
                 sb.append("\" },");
-
                 shouldContinue = !dpuContext.canceled();
             }
+            while (shouldContinue && filesIteration.hasNext()) {
+                RDFDataUnit.Entry entry;
+                entry = graphsIteration.next();
+                String symbolicName = entry.getSymbolicName();
+                Map<String, String> resource = graphsResourceHelper.getResource(symbolicName);
+                String resourceUri = resource.get("uri");
+                sb.append("{ \"uri\": \"");
+                sb.append(resourceUri);
+                sb.append("\", \"name\": \"");
+                sb.append(symbolicName);
+                sb.append("\" },");
+                shouldContinue = !dpuContext.canceled();
+            }
+
             sb.delete(sb.length() - 1, sb.length());
             sb.append("]");
             LOG.info("Request: " + sb.toString());
@@ -104,11 +124,9 @@ public class Catalog extends
                 }
             }
         } catch (DataUnitException ex) {
-            throw new DPUException("Error iterating filesInput.", ex);
-        } catch (IOException ex) {
-            throw new DPUException("Error in http", ex);
-        } catch (URISyntaxException ex) {
-            throw new DPUException("Error in http", ex);
+            throw new DPUException("Error in dataunit.", ex);
+        } catch (IOException | URISyntaxException ex) {
+            throw new DPUException("Error in http client", ex);
         } finally {
             try {
                 filesIteration.close();
@@ -116,7 +134,17 @@ public class Catalog extends
                 LOG.warn("Error closing filesInput", ex);
             }
             try {
-                resourceHelper.close();
+                filesResourceHelper.close();
+            } catch (DataUnitException ex) {
+                LOG.warn("Error in close", ex);
+            }
+            try {
+                graphsIteration.close();
+            } catch (DataUnitException ex) {
+                LOG.warn("Error closing filesInput", ex);
+            }
+            try {
+                graphsResourceHelper.close();
             } catch (DataUnitException ex) {
                 LOG.warn("Error in close", ex);
             }
