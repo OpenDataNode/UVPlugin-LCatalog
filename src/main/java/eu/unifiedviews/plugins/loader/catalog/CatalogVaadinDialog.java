@@ -18,7 +18,7 @@ public class CatalogVaadinDialog extends BaseConfigDialog<CatalogConfig_V1> {
 
     private static final String CATALOG_API_LOCATION_LABEL = "Catalog API location";
 
-    private static final String DATASET_ID_LABEL = "catalog dataset id";
+    private static final String DATASET_ID_LABEL = "Catalog dataset id";
 
     private static final String SKIP_ON_ERROR_LABEL = "Skip file on error";
 

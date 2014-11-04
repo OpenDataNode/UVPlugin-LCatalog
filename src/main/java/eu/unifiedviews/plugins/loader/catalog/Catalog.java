@@ -36,12 +36,10 @@ public class Catalog extends
     private static final Logger LOG = LoggerFactory
             .getLogger(Catalog.class);
 
-    private static final int CHUNK_SIZE = 10;
-
-    @DataUnit.AsInput(name = "filesInput")
+    @DataUnit.AsInput(name = "filesInput", optional = true)
     public FilesDataUnit filesInput;
 
-    @DataUnit.AsInput(name = "rdfInput")
+    @DataUnit.AsInput(name = "rdfInput", optional = true)
     public RDFDataUnit rdfInput;
 
     public Catalog() {
@@ -83,23 +81,33 @@ public class Catalog extends
             }
             sb.delete(sb.length() - 1, sb.length());
             sb.append("]");
-            System.out.println(sb.toString());
+            LOG.info("Request: " + sb.toString());
             CloseableHttpClient client = HttpClients.createDefault();
-            HttpPost httpPost = new HttpPost(new URIBuilder(config.getCatalogApiLocation()).setPath(config.getDatasetId()).build());
+            URIBuilder uriBuilder = new URIBuilder(config.getCatalogApiLocation());
+            uriBuilder.setPath(uriBuilder.getPath() + '/' + config.getDatasetId());
+            HttpPost httpPost = new HttpPost(uriBuilder.build().normalize());
             httpPost.addHeader(new BasicHeader("Content-Type", "application/json"));
             httpPost.setEntity(new StringEntity(sb.toString(), Charset.forName("utf-8")));
             CloseableHttpResponse response = null;
             try {
                 response = client.execute(httpPost);
-                System.out.println(EntityUtils.toString(response.getEntity()));
+                if (response.getStatusLine().getStatusCode() == 200) {
+                    LOG.info("Response:" + EntityUtils.toString(response.getEntity()));
+                } else {
+                    LOG.error("Response:" + EntityUtils.toString(response.getEntity()));
+                }
+            } catch (IOException ex) {
+                throw new DPUException(ex);
             } finally {
-                response.close();
+                if (response != null) {
+                    response.close();
+                }
             }
-        } catch (URISyntaxException ex) {
-            throw new DPUException("Wrong URI format", ex);
         } catch (DataUnitException ex) {
             throw new DPUException("Error iterating filesInput.", ex);
         } catch (IOException ex) {
+            throw new DPUException("Error in http", ex);
+        } catch (URISyntaxException ex) {
             throw new DPUException("Error in http", ex);
         } finally {
             try {
