@@ -8,7 +8,7 @@ public class CatalogConfig_V1 {
 
     private String datasetId = "dataset";
 
-    private boolean skipOnError = false;
+    private String hostname = "localhost";
 
     public CatalogConfig_V1() {
     }
@@ -29,12 +29,12 @@ public class CatalogConfig_V1 {
         this.datasetId = datasetId;
     }
 
-    public boolean isSkipOnError() {
-        return skipOnError;
+    public String getHostname() {
+        return hostname;
     }
 
-    public void setSkipOnError(boolean skipOnError) {
-        this.skipOnError = skipOnError;
+    public void setHostname(String hostname) {
+        this.hostname = hostname;
     }
 
     @Override
