@@ -4,7 +4,6 @@ import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.charset.Charset;
-import java.util.Map;
 import java.util.Set;
 import java.util.regex.Pattern;
 
@@ -28,8 +27,6 @@ import eu.unifiedviews.dpu.DPUContext;
 import eu.unifiedviews.dpu.DPUException;
 import eu.unifiedviews.helpers.dataunit.fileshelper.FilesHelper;
 import eu.unifiedviews.helpers.dataunit.rdfhelper.RDFHelper;
-import eu.unifiedviews.helpers.dataunit.resourcehelper.ResourceHelper;
-import eu.unifiedviews.helpers.dataunit.resourcehelper.ResourceHelpers;
 import eu.unifiedviews.helpers.dpu.config.AbstractConfigDialog;
 import eu.unifiedviews.helpers.dpu.config.ConfigDialogProvider;
 import eu.unifiedviews.helpers.dpu.config.ConfigurableBase;
@@ -61,8 +58,8 @@ public class Catalog extends
             throw new DPUException("No input data unit for me, exiting");
         }
 
-        ResourceHelper filesResourceHelper = ResourceHelpers.create(filesInput);
-        ResourceHelper graphsResourceHelper = ResourceHelpers.create(rdfInput);
+//        ResourceHelper filesResourceHelper = ResourceHelpers.create(filesInput);
+//        ResourceHelper graphsResourceHelper = ResourceHelpers.create(rdfInput);
         try {
             Set<FilesDataUnit.Entry> fileEntries = FilesHelper.getFiles(filesInput);
             Set<RDFDataUnit.Entry> graphEntries = RDFHelper.getGraphs(rdfInput);
@@ -70,8 +67,7 @@ public class Catalog extends
             StringBuilder sb = new StringBuilder("[");
             for (FilesDataUnit.Entry entry : fileEntries) {
                 String symbolicName = entry.getSymbolicName();
-                Map<String, String> resource = filesResourceHelper.getResource(symbolicName);
-                String resourceUri = resource.get("destinationFileUri");
+                String resourceUri = entry.getFileURIString();
                 resourceUri = resourceUri.replaceFirst(Pattern.quote("file:/var/www"), "http://" + config.getHostname() + "/");
                 resourceUri = URI.create(resourceUri).normalize().toASCIIString();
                 sb.append("{ \"uri\": \"");
@@ -85,8 +81,7 @@ public class Catalog extends
             }
             for (RDFDataUnit.Entry entry : graphEntries) {
                 String symbolicName = entry.getSymbolicName();
-                Map<String, String> resource = graphsResourceHelper.getResource(symbolicName);
-                String resourceUri = resource.get("destinationGraphUri");
+                String resourceUri = entry.getDataGraphURI().stringValue();
                 resourceUri = "http://" + config.getHostname() + ":8890/sparql?query=SELECT { ?s ?p ?o } FROM GRAPH <" + resourceUri + "> WHERE { ?s ?p ?o }";
                 resourceUri = URI.create(resourceUri).normalize().toASCIIString();
                 sb.append("{ \"uri\": \"");
@@ -128,16 +123,16 @@ public class Catalog extends
         } catch (IOException | URISyntaxException ex) {
             throw new DPUException("Error in http client", ex);
         } finally {
-            try {
-                filesResourceHelper.close();
-            } catch (DataUnitException ex) {
-                LOG.warn("Error in close", ex);
-            }
-            try {
-                graphsResourceHelper.close();
-            } catch (DataUnitException ex) {
-                LOG.warn("Error in close", ex);
-            }
+//            try {
+//                filesResourceHelper.close();
+//            } catch (DataUnitException ex) {
+//                LOG.warn("Error in close", ex);
+//            }
+//            try {
+//                graphsResourceHelper.close();
+//            } catch (DataUnitException ex) {
+//                LOG.warn("Error in close", ex);
+//            }
         }
     }
 
