@@ -81,9 +81,10 @@ public class Catalog extends
             }
             for (RDFDataUnit.Entry entry : graphEntries) {
                 String symbolicName = entry.getSymbolicName();
-                String resourceUri = entry.getDataGraphURI().stringValue();
-                resourceUri = "http://" + config.getHostname() + ":8890/sparql?query=SELECT { ?s ?p ?o } FROM GRAPH <" + resourceUri + "> WHERE { ?s ?p ?o }";
-                resourceUri = URI.create(resourceUri).normalize().toASCIIString();
+                String resourceUri;// = entry.getDataGraphURI().stringValue();
+//                resourceUri = "http://" + config.getHostname() + ":8890/sparql?query=SELECT { ?s ?p ?o } FROM GRAPH <" + resourceUri + "> WHERE { ?s ?p ?o }";
+                resourceUri = new URIBuilder().setHost(config.getHostname()).setScheme("http").setPort(8890).setPath("/sparql").addParameter("query",
+                        "SELECT ?s ?p ?o FROM <" + entry.getDataGraphURI().stringValue() + "> WHERE { ?s ?p ?o }").build().toASCIIString();// (resourceUri).normalize().toASCIIString();
                 sb.append("{ \"uri\": \"");
                 sb.append(resourceUri);
                 sb.append("\", \"name\": \"");

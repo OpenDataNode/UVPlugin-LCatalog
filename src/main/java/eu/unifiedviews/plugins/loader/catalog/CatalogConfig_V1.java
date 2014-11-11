@@ -4,7 +4,7 @@ import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.apache.commons.lang3.builder.ToStringStyle;
 
 public class CatalogConfig_V1 {
-    private String catalogApiLocation = "http://localhost:5000/uv/";
+    private String catalogApiLocation = "http://localhost/internalcatalog/uv";
 
     private String datasetId = "dataset";
 
