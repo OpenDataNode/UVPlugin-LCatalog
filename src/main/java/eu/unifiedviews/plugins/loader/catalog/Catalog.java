@@ -1,32 +1,39 @@
 package eu.unifiedviews.plugins.loader.catalog;
 
+import java.io.File;
+import java.io.FileWriter;
 import java.io.IOException;
-import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.charset.Charset;
-import java.util.Set;
-import java.util.regex.Pattern;
+import java.nio.file.Files;
 
+import org.apache.http.HttpEntity;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.utils.URIBuilder;
-import org.apache.http.entity.StringEntity;
+import org.apache.http.entity.ContentType;
+import org.apache.http.entity.mime.MultipartEntityBuilder;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
-import org.apache.http.message.BasicHeader;
 import org.apache.http.util.EntityUtils;
+import org.openrdf.model.impl.URIImpl;
+import org.openrdf.repository.RepositoryConnection;
+import org.openrdf.repository.RepositoryException;
+import org.openrdf.rio.RDFFormat;
+import org.openrdf.rio.RDFHandlerException;
+import org.openrdf.rio.Rio;
+import org.openrdf.rio.UnsupportedRDFormatException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import eu.unifiedviews.dataunit.DataUnit;
 import eu.unifiedviews.dataunit.DataUnitException;
+import eu.unifiedviews.dataunit.MetadataDataUnit;
 import eu.unifiedviews.dataunit.files.FilesDataUnit;
 import eu.unifiedviews.dataunit.rdf.RDFDataUnit;
 import eu.unifiedviews.dpu.DPU;
 import eu.unifiedviews.dpu.DPUContext;
 import eu.unifiedviews.dpu.DPUException;
-import eu.unifiedviews.helpers.dataunit.fileshelper.FilesHelper;
-import eu.unifiedviews.helpers.dataunit.rdfhelper.RDFHelper;
 import eu.unifiedviews.helpers.dpu.config.AbstractConfigDialog;
 import eu.unifiedviews.helpers.dpu.config.ConfigDialogProvider;
 import eu.unifiedviews.helpers.dpu.config.ConfigurableBase;
@@ -58,82 +65,62 @@ public class Catalog extends
             throw new DPUException("No input data unit for me, exiting");
         }
 
-//        ResourceHelper filesResourceHelper = ResourceHelpers.create(filesInput);
-//        ResourceHelper graphsResourceHelper = ResourceHelpers.create(rdfInput);
+        if (filesInput != null) {
+            executeOneDataUnit(dpuContext, filesInput);
+        }
+        if (rdfInput != null) {
+            executeOneDataUnit(dpuContext, rdfInput);
+        }
+    }
+
+    private void executeOneDataUnit(DPUContext dpuContext, MetadataDataUnit dataUnit) throws DPUException {
+        RepositoryConnection connection = null;
+        CloseableHttpResponse response = null;
         try {
-            Set<FilesDataUnit.Entry> fileEntries = FilesHelper.getFiles(filesInput);
-            Set<RDFDataUnit.Entry> graphEntries = RDFHelper.getGraphs(rdfInput);
-
-            StringBuilder sb = new StringBuilder("[");
-            for (FilesDataUnit.Entry entry : fileEntries) {
-                String symbolicName = entry.getSymbolicName();
-                String resourceUri = entry.getFileURIString();
-                resourceUri = resourceUri.replaceFirst(Pattern.quote("file:/var/www"), "http://" + config.getHostname() + "/");
-                resourceUri = URI.create(resourceUri).normalize().toASCIIString();
-                sb.append("{ \"uri\": \"");
-                sb.append(resourceUri);
-                sb.append("\", \"name\": \"");
-                sb.append(symbolicName);
-                sb.append("\" },");
-                if (dpuContext.canceled()) {
-                    throw new DPUException("Cancelled");
-                }
-            }
-            for (RDFDataUnit.Entry entry : graphEntries) {
-                String symbolicName = entry.getSymbolicName();
-                String resourceUri;// = entry.getDataGraphURI().stringValue();
-//                resourceUri = "http://" + config.getHostname() + ":8890/sparql?query=SELECT { ?s ?p ?o } FROM GRAPH <" + resourceUri + "> WHERE { ?s ?p ?o }";
-                resourceUri = new URIBuilder().setHost(config.getHostname()).setScheme("http").setPort(8890).setPath("/sparql").addParameter("query",
-                        "SELECT ?s ?p ?o FROM <" + entry.getDataGraphURI().stringValue() + "> WHERE { ?s ?p ?o }").build().toASCIIString();// (resourceUri).normalize().toASCIIString();
-                sb.append("{ \"uri\": \"");
-                sb.append(resourceUri);
-                sb.append("\", \"name\": \"");
-                sb.append(symbolicName);
-                sb.append("\" },");
-                if (dpuContext.canceled()) {
-                    throw new DPUException("Cancelled");
-                }
+            connection = dataUnit.getConnection();
+            File rdfFile = Files.createTempFile(dpuContext.getWorkingDir().toPath(), "request", ".rdf").toFile();
+            FileWriter writer = new FileWriter(rdfFile);
+            try {
+                connection.export(Rio.createWriter(RDFFormat.RDFXML, writer), dataUnit.getMetadataGraphnames().toArray(new URIImpl[0]));
+            } finally {
+                writer.close();
             }
 
-            sb.delete(sb.length() - 1, sb.length());
-            sb.append("]");
-            LOG.info("Request: " + sb.toString());
+            StringBuilder sb = new StringBuilder("{\"pipelineId\": 15 }");
+            LOG.info("Request (json): " + sb.toString());
+
             CloseableHttpClient client = HttpClients.createDefault();
             URIBuilder uriBuilder = new URIBuilder(config.getCatalogApiLocation());
             uriBuilder.setPath(uriBuilder.getPath() + '/' + config.getDatasetId());
             HttpPost httpPost = new HttpPost(uriBuilder.build().normalize());
-            httpPost.addHeader(new BasicHeader("Content-Type", "application/json"));
-            httpPost.setEntity(new StringEntity(sb.toString(), Charset.forName("utf-8")));
-            CloseableHttpResponse response = null;
-            try {
-                response = client.execute(httpPost);
-                if (response.getStatusLine().getStatusCode() == 200) {
-                    LOG.info("Response:" + EntityUtils.toString(response.getEntity()));
-                } else {
-                    LOG.error("Response:" + EntityUtils.toString(response.getEntity()));
-                }
-            } catch (IOException ex) {
-                throw new DPUException(ex);
-            } finally {
-                if (response != null) {
-                    response.close();
+            HttpEntity entity = MultipartEntityBuilder.create()
+                    .addTextBody("json", sb.toString(), ContentType.APPLICATION_JSON.withCharset(Charset.forName("utf-8")))
+                    .addBinaryBody("rdf", rdfFile, ContentType.create("application/rdf+xml", Charset.forName("utf-8")), "metadata.rdf")
+                    .build();
+            httpPost.setEntity(entity);
+            response = client.execute(httpPost);
+            if (response.getStatusLine().getStatusCode() == 200) {
+                LOG.info("Response:" + EntityUtils.toString(response.getEntity()));
+            } else {
+                LOG.error("Response:" + EntityUtils.toString(response.getEntity()));
+            }
+        } catch (RepositoryException | RDFHandlerException | UnsupportedRDFormatException | DataUnitException | IOException | URISyntaxException ex) {
+            throw new DPUException("Error exporting metadata", ex);
+        } finally {
+            if (connection != null) {
+                try {
+                    connection.close();
+                } catch (RepositoryException ex) {
+                    LOG.warn("Error in close", ex);
                 }
             }
-        } catch (DataUnitException ex) {
-            throw new DPUException("Error in dataunit.", ex);
-        } catch (IOException | URISyntaxException ex) {
-            throw new DPUException("Error in http client", ex);
-        } finally {
-//            try {
-//                filesResourceHelper.close();
-//            } catch (DataUnitException ex) {
-//                LOG.warn("Error in close", ex);
-//            }
-//            try {
-//                graphsResourceHelper.close();
-//            } catch (DataUnitException ex) {
-//                LOG.warn("Error in close", ex);
-//            }
+            if (response != null) {
+                try {
+                    response.close();
+                } catch (IOException ex) {
+                    LOG.warn("Error in close", ex);
+                }
+            }
         }
     }
 
