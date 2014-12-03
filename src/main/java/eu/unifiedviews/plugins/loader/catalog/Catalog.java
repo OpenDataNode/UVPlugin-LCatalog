@@ -90,7 +90,7 @@ public class Catalog extends ConfigurableBase<CatalogConfig_V1> implements Confi
 
             CloseableHttpClient client = HttpClients.createDefault();
             URIBuilder uriBuilder = new URIBuilder(config.getCatalogApiLocation());
-            uriBuilder.setPath(uriBuilder.getPath() + '/' + config.getDatasetId());
+            uriBuilder.setPath(uriBuilder.getPath());
             HttpPost httpPost = new HttpPost(uriBuilder.build().normalize());
             HttpEntity entity = MultipartEntityBuilder.create()
                     .addTextBody("json", sb.toString(), ContentType.APPLICATION_JSON.withCharset(Charset.forName("utf-8")))

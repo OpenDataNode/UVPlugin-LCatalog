@@ -6,10 +6,6 @@ import org.apache.commons.lang3.builder.ToStringStyle;
 public class CatalogConfig_V1 {
     private String catalogApiLocation = "http://localhost/internalcatalog/uv";
 
-    private String datasetId = "dataset";
-
-    private String hostname = "localhost";
-
     public CatalogConfig_V1() {
     }
 
@@ -19,22 +15,6 @@ public class CatalogConfig_V1 {
 
     public void setCatalogApiLocation(String catalogApiLocation) {
         this.catalogApiLocation = catalogApiLocation;
-    }
-
-    public String getDatasetId() {
-        return datasetId;
-    }
-
-    public void setDatasetId(String datasetId) {
-        this.datasetId = datasetId;
-    }
-
-    public String getHostname() {
-        return hostname;
-    }
-
-    public void setHostname(String hostname) {
-        this.hostname = hostname;
     }
 
     @Override

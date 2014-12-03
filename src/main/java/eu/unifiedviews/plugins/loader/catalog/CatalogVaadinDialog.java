@@ -57,8 +57,6 @@ public class CatalogVaadinDialog extends BaseConfigDialog<CatalogConfig_V1> {
     public void setConfiguration(CatalogConfig_V1 conf)
             throws DPUConfigException {
         catalogApiLocation.setValue(conf.getCatalogApiLocation());
-        datasetId.setValue(conf.getDatasetId());
-        hostname.setValue(conf.getHostname());
     }
 
     @Override
@@ -66,8 +64,6 @@ public class CatalogVaadinDialog extends BaseConfigDialog<CatalogConfig_V1> {
             throws DPUConfigException {
         CatalogConfig_V1 conf = new CatalogConfig_V1();
         conf.setCatalogApiLocation(catalogApiLocation.getValue());
-        conf.setDatasetId(datasetId.getValue());
-        conf.setHostname(hostname.getValue());
         return conf;
     }
 
