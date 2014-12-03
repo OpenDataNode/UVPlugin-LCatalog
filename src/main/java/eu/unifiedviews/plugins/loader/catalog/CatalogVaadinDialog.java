@@ -17,15 +17,7 @@ public class CatalogVaadinDialog extends BaseConfigDialog<CatalogConfig_V1> {
 
     private static final String CATALOG_API_LOCATION_LABEL = "Catalog API location";
 
-    private static final String DATASET_ID_LABEL = "Catalog dataset id";
-
-    private static final String HOSTNAME_LABEL = "Hostname";
-
     private ObjectProperty<String> catalogApiLocation = new ObjectProperty<String>("");
-
-    private ObjectProperty<String> datasetId = new ObjectProperty<String>("");
-
-    private ObjectProperty<String> hostname = new ObjectProperty<String>("");
 
     public CatalogVaadinDialog() {
         super(CatalogConfig_V1.class);
@@ -42,13 +34,6 @@ public class CatalogVaadinDialog extends BaseConfigDialog<CatalogConfig_V1> {
         TextField txtApiLocation = new TextField(CATALOG_API_LOCATION_LABEL, catalogApiLocation);
         txtApiLocation.setWidth("100%");
         mainLayout.addComponent(txtApiLocation);
-
-        TextField txtDatasetId = new TextField(DATASET_ID_LABEL, datasetId);
-        txtDatasetId.setWidth("100%");
-        mainLayout.addComponent(txtDatasetId);
-        TextField txtHostname = new TextField(HOSTNAME_LABEL, hostname);
-        txtHostname.setWidth("100%");
-        mainLayout.addComponent(txtHostname);
 
         setCompositionRoot(mainLayout);
     }
