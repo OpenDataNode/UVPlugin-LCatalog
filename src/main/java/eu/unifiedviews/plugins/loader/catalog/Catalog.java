@@ -7,6 +7,7 @@ import java.net.URISyntaxException;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
 
+import org.apache.commons.io.FileUtils;
 import org.apache.http.HttpEntity;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpPost;
@@ -39,11 +40,8 @@ import eu.unifiedviews.helpers.dpu.config.ConfigDialogProvider;
 import eu.unifiedviews.helpers.dpu.config.ConfigurableBase;
 
 @DPU.AsLoader
-public class Catalog extends
-        ConfigurableBase<CatalogConfig_V1> implements
-        ConfigDialogProvider<CatalogConfig_V1> {
-    private static final Logger LOG = LoggerFactory
-            .getLogger(Catalog.class);
+public class Catalog extends ConfigurableBase<CatalogConfig_V1> implements ConfigDialogProvider<CatalogConfig_V1> {
+    private static final Logger LOG = LoggerFactory.getLogger(Catalog.class);
 
     @DataUnit.AsInput(name = "filesInput", optional = true)
     public FilesDataUnit filesInput;
@@ -81,13 +79,14 @@ public class Catalog extends
             File rdfFile = Files.createTempFile(dpuContext.getWorkingDir().toPath(), "request", ".rdf").toFile();
             FileWriter writer = new FileWriter(rdfFile);
             try {
-                connection.export(Rio.createWriter(RDFFormat.RDFXML, writer), dataUnit.getMetadataGraphnames().toArray(new URIImpl[0]));
+                connection.export(Rio.createWriter(RDFFormat.TURTLE, writer), dataUnit.getMetadataGraphnames().toArray(new URIImpl[0]));
             } finally {
                 writer.close();
             }
 
             StringBuilder sb = new StringBuilder("{\"pipelineId\": 15 }");
             LOG.info("Request (json): " + sb.toString());
+            LOG.info("Request (rdfFile): " + FileUtils.readFileToString(rdfFile, Charset.forName("utf-8")));
 
             CloseableHttpClient client = HttpClients.createDefault();
             URIBuilder uriBuilder = new URIBuilder(config.getCatalogApiLocation());
