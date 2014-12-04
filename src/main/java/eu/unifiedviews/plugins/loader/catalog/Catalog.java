@@ -134,8 +134,7 @@ public class Catalog extends ConfigurableBase<CatalogConfig_V1> implements Confi
                 writer.close();
             }
 
-            StringBuilder sb = new StringBuilder("{\"pipelineId\": 15 }");
-            LOG.info("Request (json): " + sb.toString());
+            LOG.info("Request (pipelineId): 307");
             LOG.info("Request (rdfFile): " + FileUtils.readFileToString(rdfFile, Charset.forName("utf-8")));
 
             CloseableHttpClient client = HttpClients.createDefault();
@@ -143,7 +142,7 @@ public class Catalog extends ConfigurableBase<CatalogConfig_V1> implements Confi
             uriBuilder.setPath(uriBuilder.getPath());
             HttpPost httpPost = new HttpPost(uriBuilder.build().normalize());
             HttpEntity entity = MultipartEntityBuilder.create()
-                    .addTextBody("json", sb.toString(), ContentType.APPLICATION_JSON.withCharset(Charset.forName("utf-8")))
+                    .addTextBody("pipelineId", "307", ContentType.TEXT_PLAIN.withCharset(Charset.forName("utf-8")))
                     .addBinaryBody("rdf", rdfFile, ContentType.create("application/rdf+xml", Charset.forName("utf-8")), "metadata.rdf")
                     .build();
             httpPost.setEntity(entity);
