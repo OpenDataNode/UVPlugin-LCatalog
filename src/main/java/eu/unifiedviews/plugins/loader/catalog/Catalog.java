@@ -17,7 +17,11 @@ import org.apache.http.entity.mime.MultipartEntityBuilder;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
 import org.apache.http.util.EntityUtils;
+import org.openrdf.model.BNode;
+import org.openrdf.model.ValueFactory;
 import org.openrdf.model.impl.URIImpl;
+import org.openrdf.model.vocabulary.DCTERMS;
+import org.openrdf.model.vocabulary.RDF;
 import org.openrdf.repository.RepositoryConnection;
 import org.openrdf.repository.RepositoryException;
 import org.openrdf.rio.RDFFormat;
@@ -30,11 +34,16 @@ import org.slf4j.LoggerFactory;
 import eu.unifiedviews.dataunit.DataUnit;
 import eu.unifiedviews.dataunit.DataUnitException;
 import eu.unifiedviews.dataunit.MetadataDataUnit;
+import eu.unifiedviews.dataunit.WritableMetadataDataUnit;
 import eu.unifiedviews.dataunit.files.FilesDataUnit;
+import eu.unifiedviews.dataunit.files.WritableFilesDataUnit;
 import eu.unifiedviews.dataunit.rdf.RDFDataUnit;
+import eu.unifiedviews.dataunit.rdf.WritableRDFDataUnit;
 import eu.unifiedviews.dpu.DPU;
 import eu.unifiedviews.dpu.DPUContext;
 import eu.unifiedviews.dpu.DPUException;
+import eu.unifiedviews.helpers.dataunit.copyhelper.CopyHelper;
+import eu.unifiedviews.helpers.dataunit.copyhelper.CopyHelpers;
 import eu.unifiedviews.helpers.dpu.config.AbstractConfigDialog;
 import eu.unifiedviews.helpers.dpu.config.ConfigDialogProvider;
 import eu.unifiedviews.helpers.dpu.config.ConfigurableBase;
@@ -48,6 +57,12 @@ public class Catalog extends ConfigurableBase<CatalogConfig_V1> implements Confi
 
     @DataUnit.AsInput(name = "rdfInput", optional = true)
     public RDFDataUnit rdfInput;
+
+    @DataUnit.AsOutput(name = "filesOutput", optional = true)
+    public WritableFilesDataUnit filesOutput;
+
+    @DataUnit.AsOutput(name = "rdfOutput", optional = true)
+    public WritableRDFDataUnit rdfOutput;
 
     public Catalog() {
         super(CatalogConfig_V1.class);
@@ -64,22 +79,57 @@ public class Catalog extends ConfigurableBase<CatalogConfig_V1> implements Confi
         }
 
         if (filesInput != null) {
-            executeOneDataUnit(dpuContext, filesInput);
+            executeOneDataUnit(dpuContext, filesInput, filesOutput);
         }
         if (rdfInput != null) {
-            executeOneDataUnit(dpuContext, rdfInput);
+            executeOneDataUnit(dpuContext, rdfInput, rdfOutput);
         }
     }
 
-    private void executeOneDataUnit(DPUContext dpuContext, MetadataDataUnit dataUnit) throws DPUException {
-        RepositoryConnection connection = null;
+    private void executeOneDataUnit(DPUContext dpuContext, MetadataDataUnit dataUnit, WritableMetadataDataUnit writableDataUnit) throws DPUException {
         CloseableHttpResponse response = null;
+        ValueFactory valueFactory = null;
+        MetadataDataUnit.Iteration iteration = null;
+        RepositoryConnection outputMetadataConnection = null;
+        CopyHelper copyHelper = CopyHelpers.create(dataUnit, writableDataUnit);
         try {
-            connection = dataUnit.getConnection();
+            iteration = dataUnit.getIteration();
+            outputMetadataConnection = writableDataUnit.getConnection();
+            valueFactory = outputMetadataConnection.getValueFactory();
+            BNode datasetResource = valueFactory.createBNode();
+
+            outputMetadataConnection.add(valueFactory.createStatement(
+                    datasetResource, RDF.TYPE, DCAT.Dataset),
+                    writableDataUnit.getMetadataWriteGraphname());
+
+            while (iteration.hasNext()) {
+                MetadataDataUnit.Entry entry = iteration.next();
+
+                BNode symbolicNameResource = valueFactory.createBNode();
+
+                outputMetadataConnection.add(valueFactory.createStatement(
+                        datasetResource, DCAT.distribution, symbolicNameResource),
+                        filesOutput.getMetadataWriteGraphname());
+
+                outputMetadataConnection.add(valueFactory.createStatement(
+                        symbolicNameResource, RDF.TYPE, DCAT.Distribution),
+                        filesOutput.getMetadataWriteGraphname());
+
+                outputMetadataConnection.add(valueFactory.createStatement(
+                        symbolicNameResource, DCTERMS.TITLE, valueFactory.createLiteral(entry.getSymbolicName())),
+                        filesOutput.getMetadataWriteGraphname());
+
+                outputMetadataConnection.add(valueFactory.createStatement(
+                        symbolicNameResource, valueFactory.createURI(MetadataDataUnit.PREDICATE_SYMBOLIC_NAME), valueFactory.createLiteral(entry.getSymbolicName())),
+                        filesOutput.getMetadataWriteGraphname());
+
+                copyHelper.copyMetadata(entry.getSymbolicName());
+            }
+
             File rdfFile = Files.createTempFile(dpuContext.getWorkingDir().toPath(), "request", ".rdf").toFile();
             FileWriter writer = new FileWriter(rdfFile);
             try {
-                connection.export(Rio.createWriter(RDFFormat.TURTLE, writer), dataUnit.getMetadataGraphnames().toArray(new URIImpl[0]));
+                outputMetadataConnection.export(Rio.createWriter(RDFFormat.TURTLE, writer), dataUnit.getMetadataGraphnames().toArray(new URIImpl[0]));
             } finally {
                 writer.close();
             }
@@ -106,9 +156,23 @@ public class Catalog extends ConfigurableBase<CatalogConfig_V1> implements Confi
         } catch (RepositoryException | RDFHandlerException | UnsupportedRDFormatException | DataUnitException | IOException | URISyntaxException ex) {
             throw new DPUException("Error exporting metadata", ex);
         } finally {
-            if (connection != null) {
+            if (iteration != null) {
                 try {
-                    connection.close();
+                    iteration.close();
+                } catch (DataUnitException ex) {
+                    LOG.warn("Error in close", ex);
+                }
+            }
+            if (copyHelper != null) {
+                try {
+                    copyHelper.close();
+                } catch (DataUnitException ex) {
+                    LOG.warn("Error in close", ex);
+                }
+            }
+            if (outputMetadataConnection != null) {
+                try {
+                    outputMetadataConnection.close();
                 } catch (RepositoryException ex) {
                     LOG.warn("Error in close", ex);
                 }
