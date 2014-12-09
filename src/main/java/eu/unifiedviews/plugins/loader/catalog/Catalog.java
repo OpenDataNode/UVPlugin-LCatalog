@@ -130,13 +130,13 @@ public class Catalog extends ConfigurableBase<CatalogConfig_V1> implements Confi
                 rootObject.put("pipelineId", 307);
                 JSONArray resourcesArray = new JSONArray();
                 for (RDFDataUnit.Entry graph : graphs) {
-                    String storageId = VirtualPathHelpers.getVirtualPath(rdfInput, graph.getSymbolicName());
+                    String storageId = graph.getDataGraphURI().stringValue();//VirtualHelpers.getVirtualPath(rdfInput, graph.getSymbolicName());
                     if (storageId == null || storageId.isEmpty()) {
                         storageId = graph.getSymbolicName();
                     }
 
                     JSONObject storageObject = new JSONObject();
-                    storageObject.put("type", "FILE");
+                    storageObject.put("type", "RDF");
                     storageObject.put("value", storageId);
 
                     Map<String, String> resourceMap = ResourceHelpers.getResource(rdfInput, graph.getSymbolicName());
