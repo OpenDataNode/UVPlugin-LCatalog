@@ -33,6 +33,7 @@ import eu.unifiedviews.dpu.DPUException;
 import eu.unifiedviews.helpers.dataunit.fileshelper.FilesHelper;
 import eu.unifiedviews.helpers.dataunit.rdfhelper.RDFHelper;
 import eu.unifiedviews.helpers.dataunit.resourcehelper.ResourceHelpers;
+import eu.unifiedviews.helpers.dataunit.virtualgraphhelper.VirtualGraphHelpers;
 import eu.unifiedviews.helpers.dataunit.virtualpathhelper.VirtualPathHelpers;
 import eu.unifiedviews.helpers.dpu.config.AbstractConfigDialog;
 import eu.unifiedviews.helpers.dpu.config.ConfigDialogProvider;
@@ -130,7 +131,7 @@ public class Catalog extends ConfigurableBase<CatalogConfig_V1> implements Confi
                 rootObject.put("pipelineId", 307);
                 JSONArray resourcesArray = new JSONArray();
                 for (RDFDataUnit.Entry graph : graphs) {
-                    String storageId = graph.getDataGraphURI().stringValue();//VirtualHelpers.getVirtualPath(rdfInput, graph.getSymbolicName());
+                    String storageId = VirtualGraphHelpers.getVirtualGraph(rdfInput, graph.getSymbolicName());
                     if (storageId == null || storageId.isEmpty()) {
                         storageId = graph.getSymbolicName();
                     }
