@@ -3,8 +3,6 @@ package eu.unifiedviews.plugins.loader.catalog;
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.nio.charset.Charset;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.Set;
 
 import org.apache.http.HttpEntity;
@@ -32,6 +30,7 @@ import eu.unifiedviews.dpu.DPUContext;
 import eu.unifiedviews.dpu.DPUException;
 import eu.unifiedviews.helpers.dataunit.fileshelper.FilesHelper;
 import eu.unifiedviews.helpers.dataunit.rdfhelper.RDFHelper;
+import eu.unifiedviews.helpers.dataunit.resourcehelper.Resource;
 import eu.unifiedviews.helpers.dataunit.resourcehelper.ResourceHelpers;
 import eu.unifiedviews.helpers.dataunit.virtualgraphhelper.VirtualGraphHelpers;
 import eu.unifiedviews.helpers.dataunit.virtualpathhelper.VirtualPathHelpers;
@@ -80,15 +79,12 @@ public class Catalog extends ConfigurableBase<CatalogConfig_V1> implements Confi
                     storageObject.put("type", "FILE");
                     storageObject.put("value", storageId);
 
-                    Map<String, String> resourceMap = ResourceHelpers.getResource(filesInput, file.getSymbolicName());
-                    if (resourceMap == null) {
-                        resourceMap = new HashMap<String, String>();
-                    }
-                    resourceMap.put("name", storageId);
+                    Resource resource = ResourceHelpers.getResource(filesInput, file.getSymbolicName());
+                    resource.setName(storageId);
 
                     JSONObject resourceObject = new JSONObject();
                     resourceObject.put("storageId", storageObject);
-                    resourceObject.put("resource", resourceMap);
+                    resourceObject.put("resource", resource);
 
                     resourcesArray.put(resourceObject);
                 }
@@ -140,15 +136,12 @@ public class Catalog extends ConfigurableBase<CatalogConfig_V1> implements Confi
                     storageObject.put("type", "RDF");
                     storageObject.put("value", storageId);
 
-                    Map<String, String> resourceMap = ResourceHelpers.getResource(rdfInput, graph.getSymbolicName());
-                    if (resourceMap == null) {
-                        resourceMap = new HashMap<String, String>();
-                    }
-                    resourceMap.put("name", storageId);
+                    Resource resource = ResourceHelpers.getResource(rdfInput, graph.getSymbolicName());
+                    resource.setName(storageId);
 
                     JSONObject resourceObject = new JSONObject();
                     resourceObject.put("storageId", storageObject);
-                    resourceObject.put("resource", resourceMap);
+                    resourceObject.put("resource", resource);
 
                     resourcesArray.put(resourceObject);
                 }
