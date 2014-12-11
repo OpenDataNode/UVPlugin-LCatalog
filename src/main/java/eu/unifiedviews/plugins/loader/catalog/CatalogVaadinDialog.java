@@ -17,7 +17,11 @@ public class CatalogVaadinDialog extends BaseConfigDialog<CatalogConfig_V1> {
 
     private static final String CATALOG_API_LOCATION_LABEL = "Catalog API location";
 
+    private static final String PIPELINE_ID_LABEL = "Pipeline ID";
+
     private ObjectProperty<String> catalogApiLocation = new ObjectProperty<String>("");
+
+    private ObjectProperty<Long> pipelineId = new ObjectProperty<Long>(0L);
 
     public CatalogVaadinDialog() {
         super(CatalogConfig_V1.class);
@@ -35,6 +39,9 @@ public class CatalogVaadinDialog extends BaseConfigDialog<CatalogConfig_V1> {
         txtApiLocation.setWidth("100%");
         mainLayout.addComponent(txtApiLocation);
 
+        TextField txtPipelineId = new TextField(PIPELINE_ID_LABEL, pipelineId);
+        txtPipelineId.setWidth("100%");
+        mainLayout.addComponent(txtPipelineId);
         setCompositionRoot(mainLayout);
     }
 
@@ -42,6 +49,7 @@ public class CatalogVaadinDialog extends BaseConfigDialog<CatalogConfig_V1> {
     public void setConfiguration(CatalogConfig_V1 conf)
             throws DPUConfigException {
         catalogApiLocation.setValue(conf.getCatalogApiLocation());
+        pipelineId.setValue(conf.getPipelineId());
     }
 
     @Override
@@ -49,6 +57,7 @@ public class CatalogVaadinDialog extends BaseConfigDialog<CatalogConfig_V1> {
             throws DPUConfigException {
         CatalogConfig_V1 conf = new CatalogConfig_V1();
         conf.setCatalogApiLocation(catalogApiLocation.getValue());
+        conf.setPipelineId(pipelineId.getValue());
         return conf;
     }
 

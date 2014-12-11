@@ -68,7 +68,7 @@ public class Catalog extends ConfigurableBase<CatalogConfig_V1> implements Confi
             try {
                 Set<FilesDataUnit.Entry> files = FilesHelper.getFiles(filesInput);
                 JSONObject rootObject = new JSONObject();
-                rootObject.put("pipelineId", 307);
+                rootObject.put("pipelineId", config.getPipelineId());
                 JSONArray resourcesArray = new JSONArray();
                 for (FilesDataUnit.Entry file : files) {
                     String storageId = VirtualPathHelpers.getVirtualPath(filesInput, file.getSymbolicName());
@@ -130,7 +130,7 @@ public class Catalog extends ConfigurableBase<CatalogConfig_V1> implements Confi
             try {
                 Set<RDFDataUnit.Entry> graphs = RDFHelper.getGraphs(rdfInput);
                 JSONObject rootObject = new JSONObject();
-                rootObject.put("pipelineId", 307);
+                rootObject.put("pipelineId", config.getPipelineId());
                 JSONArray resourcesArray = new JSONArray();
                 for (RDFDataUnit.Entry graph : graphs) {
                     String storageId = VirtualGraphHelpers.getVirtualGraph(rdfInput, graph.getSymbolicName());
