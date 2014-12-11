@@ -31,6 +31,7 @@ import eu.unifiedviews.dpu.DPUException;
 import eu.unifiedviews.helpers.dataunit.fileshelper.FilesHelper;
 import eu.unifiedviews.helpers.dataunit.rdfhelper.RDFHelper;
 import eu.unifiedviews.helpers.dataunit.resourcehelper.Resource;
+import eu.unifiedviews.helpers.dataunit.resourcehelper.ResourceConverter;
 import eu.unifiedviews.helpers.dataunit.resourcehelper.ResourceHelpers;
 import eu.unifiedviews.helpers.dataunit.virtualgraphhelper.VirtualGraphHelpers;
 import eu.unifiedviews.helpers.dataunit.virtualpathhelper.VirtualPathHelpers;
@@ -82,9 +83,14 @@ public class Catalog extends ConfigurableBase<CatalogConfig_V1> implements Confi
                     Resource resource = ResourceHelpers.getResource(filesInput, file.getSymbolicName());
                     resource.setName(storageId);
 
+                    JSONObject resourceExtras = new JSONObject(resource.getExtras());
+
+                    JSONObject resourceEntity = new JSONObject(ResourceConverter.toMap(resource));
+                    resourceEntity.put("extras", resourceExtras);
+
                     JSONObject resourceObject = new JSONObject();
                     resourceObject.put("storageId", storageObject);
-                    resourceObject.put("resource", resource);
+                    resourceObject.put("resource", resourceEntity);
 
                     resourcesArray.put(resourceObject);
                 }
@@ -139,9 +145,14 @@ public class Catalog extends ConfigurableBase<CatalogConfig_V1> implements Confi
                     Resource resource = ResourceHelpers.getResource(rdfInput, graph.getSymbolicName());
                     resource.setName(storageId);
 
+                    JSONObject resourceExtras = new JSONObject(resource.getExtras());
+
+                    JSONObject resourceEntity = new JSONObject(ResourceConverter.toMap(resource));
+                    resourceEntity.put("extras", resourceExtras);
+
                     JSONObject resourceObject = new JSONObject();
                     resourceObject.put("storageId", storageObject);
-                    resourceObject.put("resource", resource);
+                    resourceObject.put("resource", resourceEntity);
 
                     resourcesArray.put(resourceObject);
                 }
