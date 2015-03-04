@@ -3,7 +3,14 @@ package eu.unifiedviews.plugins.loader.catalog;
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.nio.charset.Charset;
+import java.util.Collections;
+import java.util.Map;
 import java.util.Set;
+
+import javax.json.Json;
+import javax.json.JsonArrayBuilder;
+import javax.json.JsonBuilderFactory;
+import javax.json.JsonObjectBuilder;
 
 import org.apache.http.HttpEntity;
 import org.apache.http.client.entity.EntityBuilder;
@@ -14,9 +21,6 @@ import org.apache.http.entity.ContentType;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
 import org.apache.http.util.EntityUtils;
-import org.json.JSONArray;
-import org.json.JSONException;
-import org.json.JSONObject;
 import org.openrdf.rio.UnsupportedRDFormatException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -63,127 +67,78 @@ public class Catalog extends ConfigurableBase<CatalogConfig_V1> implements Confi
             throw new DPUException("No input data unit for me, exiting");
         }
 
-        if (filesInput != null) {
-            CloseableHttpResponse response = null;
-            try {
+        CloseableHttpResponse response = null;
+        try {
+            JsonBuilderFactory factory = Json.createBuilderFactory(Collections.<String, Object> emptyMap());
+            JsonObjectBuilder rootBuilder = factory.createObjectBuilder();
+            rootBuilder.add("pipelineId", config.getPipelineId());
+            JsonArrayBuilder resourcesArray = factory.createArrayBuilder();
+
+            if (filesInput != null) {
                 Set<FilesDataUnit.Entry> files = FilesHelper.getFiles(filesInput);
-                JSONObject rootObject = new JSONObject();
-                rootObject.put("pipelineId", config.getPipelineId());
-                JSONArray resourcesArray = new JSONArray();
                 for (FilesDataUnit.Entry file : files) {
                     String storageId = VirtualPathHelpers.getVirtualPath(filesInput, file.getSymbolicName());
                     if (storageId == null || storageId.isEmpty()) {
                         storageId = file.getSymbolicName();
                     }
-
-                    JSONObject storageObject = new JSONObject();
-                    storageObject.put("type", "FILE");
-                    storageObject.put("value", storageId);
-
                     Resource resource = ResourceHelpers.getResource(filesInput, file.getSymbolicName());
                     resource.setName(storageId);
-
-                    JSONObject resourceExtras = new JSONObject(resource.getExtras());
-
-                    JSONObject resourceEntity = new JSONObject(ResourceConverter.toMap(resource));
-                    resourceEntity.put("extras", resourceExtras);
-
-                    JSONObject resourceObject = new JSONObject();
-                    resourceObject.put("storageId", storageObject);
-                    resourceObject.put("resource", resourceEntity);
-
-                    resourcesArray.put(resourceObject);
-                }
-                rootObject.put("resources", resourcesArray);
-
-                LOG.info("Request (json): " + rootObject.toString(2));
-
-                CloseableHttpClient client = HttpClients.createDefault();
-                URIBuilder uriBuilder = new URIBuilder(config.getCatalogApiLocation());
-                uriBuilder.setPath(uriBuilder.getPath());
-                HttpPost httpPost = new HttpPost(uriBuilder.build().normalize());
-                HttpEntity entity = EntityBuilder.create()
-                        .setText(rootObject.toString(2))
-                        .setContentType(ContentType.APPLICATION_JSON.withCharset(Charset.forName("utf-8")))
-                        .build();
-                httpPost.setEntity(entity);
-                response = client.execute(httpPost);
-                if (response.getStatusLine().getStatusCode() == 200) {
-                    LOG.info("Response:" + EntityUtils.toString(response.getEntity()));
-                } else {
-                    LOG.error("Response:" + EntityUtils.toString(response.getEntity()));
-                }
-            } catch (UnsupportedRDFormatException | DataUnitException | IOException | URISyntaxException | JSONException ex) {
-                throw new DPUException("Error exporting metadata", ex);
-            } finally {
-                if (response != null) {
-                    try {
-                        response.close();
-                    } catch (IOException ex) {
-                        LOG.warn("Error in close", ex);
-                    }
+                    resourcesArray.add(factory.createObjectBuilder()
+                            .add("storageId",
+                                    factory.createObjectBuilder()
+                                            .add("type", "FILE")
+                                            .add("value", storageId))
+                            .add("resource", buildResource(factory, resource, storageId))
+                            );
                 }
             }
-        }
-        if (rdfInput != null) {
-            CloseableHttpResponse response = null;
-            try {
+            if (rdfInput != null) {
                 Set<RDFDataUnit.Entry> graphs = RDFHelper.getGraphs(rdfInput);
-                JSONObject rootObject = new JSONObject();
-                rootObject.put("pipelineId", config.getPipelineId());
-                JSONArray resourcesArray = new JSONArray();
                 for (RDFDataUnit.Entry graph : graphs) {
                     String storageId = VirtualGraphHelpers.getVirtualGraph(rdfInput, graph.getSymbolicName());
                     if (storageId == null || storageId.isEmpty()) {
                         storageId = graph.getSymbolicName();
                     }
-
-                    JSONObject storageObject = new JSONObject();
-                    storageObject.put("type", "RDF");
-                    storageObject.put("value", storageId);
-
                     Resource resource = ResourceHelpers.getResource(rdfInput, graph.getSymbolicName());
                     resource.setName(storageId);
-
-                    JSONObject resourceExtras = new JSONObject(resource.getExtras());
-
-                    JSONObject resourceEntity = new JSONObject(ResourceConverter.toMap(resource));
-                    resourceEntity.put("extras", resourceExtras);
-
-                    JSONObject resourceObject = new JSONObject();
-                    resourceObject.put("storageId", storageObject);
-                    resourceObject.put("resource", resourceEntity);
-
-                    resourcesArray.put(resourceObject);
+                    resourcesArray.add(factory.createObjectBuilder()
+                            .add("storageId",
+                                    factory.createObjectBuilder()
+                                            .add("type", "RDF")
+                                            .add("value", storageId))
+                            .add("resource", buildResource(factory, resource, storageId))
+                            );
                 }
-                rootObject.put("resources", resourcesArray);
+            }
 
-                LOG.info("Request (json): " + rootObject.toString(2));
+            rootBuilder.add("resources", resourcesArray);
+            String requestString = rootBuilder.build().toString();
 
-                CloseableHttpClient client = HttpClients.createDefault();
-                URIBuilder uriBuilder = new URIBuilder(config.getCatalogApiLocation());
-                uriBuilder.setPath(uriBuilder.getPath());
-                HttpPost httpPost = new HttpPost(uriBuilder.build().normalize());
-                HttpEntity entity = EntityBuilder.create()
-                        .setText(rootObject.toString(2))
-                        .setContentType(ContentType.APPLICATION_JSON.withCharset(Charset.forName("utf-8")))
-                        .build();
-                httpPost.setEntity(entity);
-                response = client.execute(httpPost);
-                if (response.getStatusLine().getStatusCode() == 200) {
-                    LOG.info("Response:" + EntityUtils.toString(response.getEntity()));
-                } else {
-                    LOG.error("Response:" + EntityUtils.toString(response.getEntity()));
-                }
-            } catch (UnsupportedRDFormatException | DataUnitException | IOException | URISyntaxException | JSONException ex) {
-                throw new DPUException("Error exporting metadata", ex);
-            } finally {
-                if (response != null) {
-                    try {
-                        response.close();
-                    } catch (IOException ex) {
-                        LOG.warn("Error in close", ex);
-                    }
+            LOG.info("Request (json): " + requestString);
+
+            CloseableHttpClient client = HttpClients.createDefault();
+            URIBuilder uriBuilder = new URIBuilder(config.getCatalogApiLocation());
+            uriBuilder.setPath(uriBuilder.getPath());
+            HttpPost httpPost = new HttpPost(uriBuilder.build().normalize());
+            HttpEntity entity = EntityBuilder.create()
+                    .setText(requestString)
+                    .setContentType(ContentType.APPLICATION_JSON.withCharset(Charset.forName("utf-8")))
+                    .build();
+            httpPost.setEntity(entity);
+            response = client.execute(httpPost);
+            if (response.getStatusLine().getStatusCode() == 200) {
+                LOG.info("Response:" + EntityUtils.toString(response.getEntity()));
+            } else {
+                LOG.error("Response:" + EntityUtils.toString(response.getEntity()));
+            }
+        } catch (UnsupportedRDFormatException | DataUnitException | IOException | URISyntaxException ex) {
+            throw new DPUException("Error exporting metadata", ex);
+        } finally {
+            if (response != null) {
+                try {
+                    response.close();
+                } catch (IOException ex) {
+                    LOG.warn("Error in close", ex);
                 }
             }
         }
@@ -192,6 +147,21 @@ public class Catalog extends ConfigurableBase<CatalogConfig_V1> implements Confi
     @Override
     public AbstractConfigDialog<CatalogConfig_V1> getConfigurationDialog() {
         return new CatalogVaadinDialog();
+    }
+
+    private JsonObjectBuilder buildResource(JsonBuilderFactory factory, Resource resource, String storageId) {
+        JsonObjectBuilder resourceExtrasBuilder = factory.createObjectBuilder();
+        for (Map.Entry<String, String> mapEntry : ResourceConverter.extrasToMap(resource.getExtras()).entrySet()) {
+            resourceExtrasBuilder.add(mapEntry.getKey(), mapEntry.getValue());
+        }
+
+        JsonObjectBuilder resourceBuilder = factory.createObjectBuilder();
+        for (Map.Entry<String, String> mapEntry : ResourceConverter.resourceToMap(resource).entrySet()) {
+            resourceBuilder.add(mapEntry.getKey(), mapEntry.getValue());
+        }
+        resourceBuilder.add("extras", resourceExtrasBuilder);
+
+        return resourceBuilder;
     }
 
     public static String appendNumber(long number) {
