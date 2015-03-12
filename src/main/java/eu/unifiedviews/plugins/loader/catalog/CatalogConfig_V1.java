@@ -6,8 +6,6 @@ import org.apache.commons.lang3.builder.ToStringStyle;
 public class CatalogConfig_V1 {
     private String catalogApiLocation = "http://localhost/internalcatalog/uv";
 
-    private Long pipelineId = 0L;
-
     public CatalogConfig_V1() {
     }
 
@@ -17,14 +15,6 @@ public class CatalogConfig_V1 {
 
     public void setCatalogApiLocation(String catalogApiLocation) {
         this.catalogApiLocation = catalogApiLocation;
-    }
-
-    public Long getPipelineId() {
-        return pipelineId;
-    }
-
-    public void setPipelineId(Long pipelineId) {
-        this.pipelineId = pipelineId;
     }
 
     @Override

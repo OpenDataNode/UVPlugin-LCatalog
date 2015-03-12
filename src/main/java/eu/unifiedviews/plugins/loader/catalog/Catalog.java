@@ -71,7 +71,7 @@ public class Catalog extends ConfigurableBase<CatalogConfig_V1> implements Confi
         try {
             JsonBuilderFactory factory = Json.createBuilderFactory(Collections.<String, Object> emptyMap());
             JsonObjectBuilder rootBuilder = factory.createObjectBuilder();
-            rootBuilder.add("pipelineId", config.getPipelineId());
+            rootBuilder.add("pipelineId", dpuContext.getPipelineId());
             JsonArrayBuilder resourcesArray = factory.createArrayBuilder();
 
             if (filesInput != null) {
