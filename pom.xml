@@ -14,7 +14,7 @@
 	<artifactId>uv-l-catalog</artifactId>
 	<name>L-Catalog</name>
 	<description>Loads resources to CKAN catalog</description>
-	<version>1.6.1-SNAPSHOT</version>
+	<version>1.6.1</version>
 	<packaging>bundle</packaging>
 
 	<repositories>
