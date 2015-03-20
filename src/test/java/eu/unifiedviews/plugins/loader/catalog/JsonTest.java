@@ -7,12 +7,11 @@ import javax.json.Json;
 import javax.json.JsonBuilderFactory;
 import javax.json.JsonObjectBuilder;
 
+import eu.unifiedviews.helpers.dataunit.resource.Resource;
+import eu.unifiedviews.helpers.dataunit.resource.ResourceConverter;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.junit.Test;
-
-import eu.unifiedviews.helpers.dataunit.resourcehelper.Resource;
-import eu.unifiedviews.helpers.dataunit.resourcehelper.ResourceConverter;
 
 public class JsonTest {
 
