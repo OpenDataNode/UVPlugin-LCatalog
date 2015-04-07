@@ -9,7 +9,7 @@
         <version>2.0.0</version>
     </parent>
 
-	<groupId>eu.unifiedviews.plugins</groupId>
+	<groupId>eu.opendatanode.plugins</groupId>
 	<artifactId>uv-l-catalog</artifactId>
 	<name>L-Catalog</name>
 	<description>Loads resources to CKAN catalog</description>
