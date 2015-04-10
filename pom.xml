@@ -3,11 +3,12 @@
 	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd"
 	xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
 	<modelVersion>4.0.0</modelVersion>
-    <parent>
-        <groupId>eu.unifiedviews</groupId>
-        <artifactId>uv-pom-dpu</artifactId>
-        <version>2.0.0</version>
-    </parent>
+	<parent>
+		<groupId>eu.unifiedviews</groupId>
+		<artifactId>uv-pom-dpu</artifactId>
+		<version>2.0.1</version>
+		<relativePath />
+	</parent>
 
 	<groupId>eu.opendatanode.plugins</groupId>
 	<artifactId>uv-l-catalog</artifactId>
@@ -16,41 +17,31 @@
 	<version>2.0.0</version>
 	<packaging>bundle</packaging>
 
-	<repositories>
-		<repository>
-			<id>maven.eea.sk</id>
-			<name>maven.eea.sk-public</name>
-			<url>http://maven.eea.sk/artifactory/public/</url>
-		</repository>
-	</repositories>
-
 	<properties>
 		<dpu.package>eu.unifiedviews.plugins.loader.catalog</dpu.package>
 		<dpu.mainClass>Catalog</dpu.mainClass>
 	</properties>
 
 	<dependencies>
-        <!-- UnifiedViews helpers. -->
-        <dependency>
-            <groupId>eu.unifiedviews</groupId>
-            <artifactId>uv-dataunit-helpers</artifactId>
-            <scope>compile</scope>
-        </dependency>
-        <dependency>
-            <groupId>eu.unifiedviews</groupId>
-            <artifactId>uv-dpu-helpers</artifactId>
-            <scope>compile</scope>
-        </dependency>
+		<!-- UnifiedViews helpers. -->
+		<dependency>
+			<groupId>eu.unifiedviews</groupId>
+			<artifactId>uv-dataunit-helpers</artifactId>
+			<scope>compile</scope>
+		</dependency>
+		<dependency>
+			<groupId>eu.unifiedviews</groupId>
+			<artifactId>uv-dpu-helpers</artifactId>
+			<scope>compile</scope>
+		</dependency>
 		<dependency>
 			<groupId>org.apache.commons</groupId>
 			<artifactId>commons-lang3</artifactId>
-			<version>3.0</version>
 			<scope>provided</scope>
 		</dependency>
 		<dependency>
 			<groupId>commons-io</groupId>
 			<artifactId>commons-io</artifactId>
-			<version>2.4</version>
 			<scope>provided</scope>
 		</dependency>
 		<dependency>
@@ -68,7 +59,6 @@
 		<dependency>
 			<groupId>junit</groupId>
 			<artifactId>junit</artifactId>
-			<version>4.11</version>
 			<scope>test</scope>
 		</dependency>
 		<dependency>
@@ -82,11 +72,11 @@
 			<version>1.0.4</version>
 			<scope>compile</scope>
 		</dependency>
-        <!-- Core UnifiedViews testing support. -->
-        <dependency>
-            <groupId>eu.unifiedviews</groupId>
-            <artifactId>module-test</artifactId>
-            <scope>test</scope>
-        </dependency>
+		<!-- Core UnifiedViews testing support. -->
+		<dependency>
+			<groupId>eu.unifiedviews</groupId>
+			<artifactId>module-test</artifactId>
+			<scope>test</scope>
+		</dependency>
 	</dependencies>
 </project>
