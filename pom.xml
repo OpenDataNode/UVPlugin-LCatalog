@@ -10,7 +10,7 @@
 		<relativePath />
 	</parent>
 
-	<groupId>eu.opendatanode.plugins</groupId>
+	<groupId>org.opendatanode.plugins</groupId>
 	<artifactId>uv-l-catalog</artifactId>
 	<name>L-Catalog</name>
 	<description>Loads resources to CKAN catalog</description>
