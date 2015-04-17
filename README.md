@@ -8,16 +8,16 @@
 |**Name:**                     |L-Catalog                                             |
 |**Description:**              |Loads resources to CKAN catalog. CKAN extension is required to support this functionality |
 |                              |                                                               |
-|**DPU class name:**           |Catalog     | 
+|**DPU class name:**           |Catalog     |
 |**Configuration class name:** |CatalogConfig_V1                           |
-|**Dialogue class name:**      |CatalogVaadinDialog | 
+|**Dialogue class name:**      |CatalogVaadinDialog |
 
 ***
 
 ###Configuration parameters###
 
 
-|Parameter                        |Description                             |                                                        
+|Parameter                        |Description                             |
 |---------------------------------|----------------------------------------|
 |**Catalog API location** | TBD  |
 |**Pipeline ID** | TBD |
@@ -37,7 +37,10 @@
 
 |Version            |Release notes                                   |
 |-------------------|------------------------------------------------|
-|1.5.5              |N/A                                             |                                
+|2.0.0 | Update to helpers 2.0.0 |
+|1.6.0 | N/A |
+|1.5.5 | N/A |
+|1.5.0 | N/A |
 
 
 ***
@@ -46,5 +49,5 @@
 
 |Author            |Notes                 |
 |------------------|----------------------|
-|N/A               |N/A                   | 
+|N/A               |N/A                   |
 
