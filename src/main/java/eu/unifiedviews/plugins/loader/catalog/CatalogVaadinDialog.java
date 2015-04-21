@@ -5,17 +5,15 @@ import com.vaadin.ui.FormLayout;
 import com.vaadin.ui.TextField;
 
 import eu.unifiedviews.dpu.config.DPUConfigException;
-import eu.unifiedviews.helpers.dpu.config.BaseConfigDialog;
+import eu.unifiedviews.helpers.dpu.vaadin.dialog.AbstractDialog;
 
 /**
  * DPU's configuration dialog. User can use this dialog to configure DPU
  * configuration.
  */
-public class CatalogVaadinDialog extends BaseConfigDialog<CatalogConfig_V1> {
+public class CatalogVaadinDialog extends AbstractDialog<CatalogConfig_V1> {
 
     private static final long serialVersionUID = -5668436075836909428L;
-
-    private static final String CATALOG_API_LOCATION_LABEL = "Catalog API location";
 
     private static final String PIPELINE_ID_LABEL = "Pipeline ID";
 
@@ -24,20 +22,22 @@ public class CatalogVaadinDialog extends BaseConfigDialog<CatalogConfig_V1> {
     private ObjectProperty<Long> pipelineId = new ObjectProperty<Long>(0L);
 
     public CatalogVaadinDialog() {
-        super(CatalogConfig_V1.class);
-        initialize();
+        super(Catalog.class);
     }
 
-    private void initialize() {
+    @Override
+    protected void buildDialogLayout() {
         FormLayout mainLayout = new FormLayout();
 
         // top-level component properties
         setWidth("100%");
         setHeight("100%");
 
-        TextField txtApiLocation = new TextField(CATALOG_API_LOCATION_LABEL, catalogApiLocation);
+        TextField txtApiLocation = new TextField(ctx.tr("catalog.dialog.api.location"), catalogApiLocation);
         txtApiLocation.setWidth("100%");
         mainLayout.addComponent(txtApiLocation);
+        mainLayout.setSpacing(true);
+        mainLayout.setMargin(true);
         setCompositionRoot(mainLayout);
     }
 

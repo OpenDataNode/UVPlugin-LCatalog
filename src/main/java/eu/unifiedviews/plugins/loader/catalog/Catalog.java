@@ -12,6 +12,19 @@ import javax.json.JsonArrayBuilder;
 import javax.json.JsonBuilderFactory;
 import javax.json.JsonObjectBuilder;
 
+import eu.unifiedviews.helpers.dataunit.files.FilesHelper;
+import eu.unifiedviews.helpers.dataunit.rdf.RDFHelper;
+import eu.unifiedviews.helpers.dataunit.resource.Resource;
+import eu.unifiedviews.helpers.dataunit.resource.ResourceConverter;
+import eu.unifiedviews.helpers.dataunit.resource.ResourceHelpers;
+import eu.unifiedviews.helpers.dataunit.virtualgraph.VirtualGraphHelpers;
+import eu.unifiedviews.helpers.dataunit.virtualpath.VirtualPathHelpers;
+import eu.unifiedviews.helpers.dpu.config.ConfigHistory;
+import eu.unifiedviews.helpers.dpu.config.migration.ConfigurationUpdate;
+import eu.unifiedviews.helpers.dpu.context.ContextUtils;
+import eu.unifiedviews.helpers.dpu.exec.AbstractDpu;
+import eu.unifiedviews.helpers.dpu.extension.ExtensionInitializer;
+import eu.unifiedviews.helpers.dpu.extension.faulttolerance.FaultTolerance;
 import org.apache.http.HttpEntity;
 import org.apache.http.client.entity.EntityBuilder;
 import org.apache.http.client.methods.CloseableHttpResponse;
@@ -32,19 +45,9 @@ import eu.unifiedviews.dataunit.rdf.RDFDataUnit;
 import eu.unifiedviews.dpu.DPU;
 import eu.unifiedviews.dpu.DPUContext;
 import eu.unifiedviews.dpu.DPUException;
-import eu.unifiedviews.helpers.dataunit.fileshelper.FilesHelper;
-import eu.unifiedviews.helpers.dataunit.rdfhelper.RDFHelper;
-import eu.unifiedviews.helpers.dataunit.resourcehelper.Resource;
-import eu.unifiedviews.helpers.dataunit.resourcehelper.ResourceConverter;
-import eu.unifiedviews.helpers.dataunit.resourcehelper.ResourceHelpers;
-import eu.unifiedviews.helpers.dataunit.virtualgraphhelper.VirtualGraphHelpers;
-import eu.unifiedviews.helpers.dataunit.virtualpathhelper.VirtualPathHelpers;
-import eu.unifiedviews.helpers.dpu.config.AbstractConfigDialog;
-import eu.unifiedviews.helpers.dpu.config.ConfigDialogProvider;
-import eu.unifiedviews.helpers.dpu.config.ConfigurableBase;
 
 @DPU.AsLoader
-public class Catalog extends ConfigurableBase<CatalogConfig_V1> implements ConfigDialogProvider<CatalogConfig_V1> {
+public class Catalog extends AbstractDpu<CatalogConfig_V1> {
     private static final Logger LOG = LoggerFactory.getLogger(Catalog.class);
 
     @DataUnit.AsInput(name = "filesInput", optional = true)
@@ -53,25 +56,31 @@ public class Catalog extends ConfigurableBase<CatalogConfig_V1> implements Confi
     @DataUnit.AsInput(name = "rdfInput", optional = true)
     public RDFDataUnit rdfInput;
 
+    @ExtensionInitializer.Init
+    public FaultTolerance faultTolerance;
+
+    @ExtensionInitializer.Init(param = "eu.unifiedviews.plugins.transformer.zipper.ZipperConfig__V1")
+    public ConfigurationUpdate _ConfigurationUpdate;
+
     public Catalog() {
-        super(CatalogConfig_V1.class);
+        super(CatalogVaadinDialog.class, ConfigHistory.noHistory(CatalogConfig_V1.class));
     }
 
     @Override
-    public void execute(DPUContext dpuContext) throws DPUException, InterruptedException {
-        String shortMessage = this.getClass().getSimpleName() + " starting.";
+    protected void innerExecute() throws DPUException {
+        String shortMessage = ctx.tr("catalog.starting");
         String longMessage = String.valueOf(config);
-        dpuContext.sendMessage(DPUContext.MessageType.INFO, shortMessage, longMessage);
+        ContextUtils.sendMessage(ctx, DPUContext.MessageType.INFO, shortMessage, longMessage);
 
         if (rdfInput == null && filesInput == null) {
-            throw new DPUException("No input data unit for me, exiting");
+            throw ContextUtils.dpuException(ctx, "catalog.error.no.input");
         }
 
         CloseableHttpResponse response = null;
         try {
             JsonBuilderFactory factory = Json.createBuilderFactory(Collections.<String, Object> emptyMap());
             JsonObjectBuilder rootBuilder = factory.createObjectBuilder();
-            rootBuilder.add("pipelineId", dpuContext.getPipelineId());
+            rootBuilder.add("pipelineId", ctx.getExecMasterContext().getDpuContext().getPipelineId());
             JsonArrayBuilder resourcesArray = factory.createArrayBuilder();
 
             if (filesInput != null) {
@@ -132,7 +141,7 @@ public class Catalog extends ConfigurableBase<CatalogConfig_V1> implements Confi
                 LOG.error("Response:" + EntityUtils.toString(response.getEntity()));
             }
         } catch (UnsupportedRDFormatException | DataUnitException | IOException | URISyntaxException ex) {
-            throw new DPUException("Error exporting metadata", ex);
+            throw ContextUtils.dpuException(ctx, ex, "catalog.error.metadata.export");
         } finally {
             if (response != null) {
                 try {
@@ -142,11 +151,6 @@ public class Catalog extends ConfigurableBase<CatalogConfig_V1> implements Confi
                 }
             }
         }
-    }
-
-    @Override
-    public AbstractConfigDialog<CatalogConfig_V1> getConfigurationDialog() {
-        return new CatalogVaadinDialog();
     }
 
     private JsonObjectBuilder buildResource(JsonBuilderFactory factory, Resource resource, String storageId) {
@@ -162,28 +166,5 @@ public class Catalog extends ConfigurableBase<CatalogConfig_V1> implements Confi
         resourceBuilder.add("extras", resourceExtrasBuilder);
 
         return resourceBuilder;
-    }
-
-    public static String appendNumber(long number) {
-        String value = String.valueOf(number);
-        if (value.length() > 1) {
-            // Check for special case: 11 - 13 are all "th".
-            // So if the second to last digit is 1, it is "th".
-            char secondToLastDigit = value.charAt(value.length() - 2);
-            if (secondToLastDigit == '1') {
-                return value + "th";
-            }
-        }
-        char lastDigit = value.charAt(value.length() - 1);
-        switch (lastDigit) {
-            case '1':
-                return value + "st";
-            case '2':
-                return value + "nd";
-            case '3':
-                return value + "rd";
-            default:
-                return value + "th";
-        }
     }
 }
